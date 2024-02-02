@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "807844303698",
+    "project_id": "instagram-tutorial-56e03",
+    "storage_bucket": "instagram-tutorial-56e03.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:807844303698:android:746aed06497c6a3a53208b",
+        "android_client_info": {
+          "package_name": "com.example.instagram_tutorial"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADB1yEkF3d-KWP5TYBRxd5I30qA8tso78"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
