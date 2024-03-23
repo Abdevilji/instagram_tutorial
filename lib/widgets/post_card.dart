@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram_tutorial/Screens/comments_screen.dart';
 
-import 'package:instagram_tutorial/model/user.dart' ;
+import 'package:instagram_tutorial/model/user.dart';
 import 'package:instagram_tutorial/providers/user_providers.dart';
 import 'package:instagram_tutorial/resources/firestore_methods.dart';
 
@@ -9,28 +10,67 @@ import 'package:instagram_tutorial/screens/login_screen.dart';
 import 'package:instagram_tutorial/utils/colors.dart';
 import 'package:instagram_tutorial/utils/global_variable.dart';
 import 'package:instagram_tutorial/utils/utils.dart';
+import 'package:intl/intl.dart';
 
-// import 'package:instagram_tutorial/widgets/like_animation.dart';
+import 'package:instagram_tutorial/widgets/like_animation.dart';
+
 // import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../model/user.dart';
+
 class PostCard extends StatefulWidget {
   final snap;
-   PostCard({super.key, this.snap});
+
+  PostCard({super.key, this.snap});
 
   @override
   State<PostCard> createState() => _PostCardState();
 }
 
 class _PostCardState extends State<PostCard> {
+  bool isLikeAnimating = false;
+  int commentLen = 0;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getComments();
+  }
+
+  void getComments() async {
+    try {
+      QuerySnapshot snap = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.snap['postId'])
+          .collection('comments')
+          .get();
+
+      commentLen = snap.docs.length;
+    } catch (e) {
+      // TODO
+      showSnackBar(e.toString(), context);
+    }
+    setState(() {});
+  }
+
   void navigatetologin() {
     Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) =>const Login_Screen()));
+        .push(MaterialPageRoute(builder: (context) => const Login_Screen()));
   }
+
   @override
   Widget build(BuildContext context) {
+    final User user = Provider.of<UserProvider>(context).getUser;
+    final width =MediaQuery.of (context).size.width;
     return Container(
-      color: mobileBackgroundColor,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: width >webScreenSize ? secondaryColor : mobileBackgroundColor
+        )
+      ),
+      // color: mobileBackgroundColor,
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         children: [
@@ -41,14 +81,14 @@ class _PostCardState extends State<PostCard> {
             ).copyWith(right: 0),
             child: Row(
               children: [
-                 CircleAvatar(
+                CircleAvatar(
                   radius: 16,
                   backgroundImage: NetworkImage(
-                   widget.snap['profImage'],
+                    widget.snap['profImage'],
                     // 'https://firebasestorage.googleapis.com/v0/b/instagram-tutorial-56e03.appspot.com/o/Profilepics%2FLBZ74lht3kfYQ69SIFFHko9yZaw1?alt=media&token=4ca59a84-5be0-44cd-b9a1-0b9bab15c5eb'
-                   ),
+                  ),
                 ),
-                 Expanded(
+                Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: Column(
@@ -74,7 +114,11 @@ class _PostCardState extends State<PostCard> {
                             shrinkWrap: true,
                             children: ['Delete']
                                 .map((e) => InkWell(
-                                      onTap: navigatetologin,  //remove this it is for login navigation
+                                      onTap: () async {
+                                        FirestoreMethods()
+                                            .deletePost(widget.snap['postId']);
+                                        Navigator.of(context).pop();
+                                      },
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 12, horizontal: 16),
@@ -91,27 +135,78 @@ class _PostCardState extends State<PostCard> {
             ),
             //image Section
           ),
-         SizedBox(
-             height: MediaQuery.of(context).size.height/3,
-             width: double.infinity,
-             child: Image.network(
-               widget.snap['postUrl'],
-               //'https://images.unsplash.com/photo-1605371153826-0473d38e65e3?q=80&w=2050&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-               //  'https://images.unsplash.com/photo-1676725151088-3d47c63d6854?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-               fit: BoxFit.contain,
-             ),
-           ),
+          GestureDetector(
+            //note diffeerence betwween inkwell and gesturedetector
+            onDoubleTap: () async {
+              await FirestoreMethods().likePost(
+                  widget.snap['postId'], user.uid, widget.snap['likes']);
+              setState(() {
+                isLikeAnimating = true;
+              });
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height / 3,
+                  width: double.infinity,
+                  child: Image.network(
+                    widget.snap['postUrl'],
+                    //'https://images.unsplash.com/photo-1605371153826-0473d38e65e3?q=80&w=2050&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                    //  'https://images.unsplash.com/photo-1676725151088-3d47c63d6854?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: isLikeAnimating ? 1 : 0,
+                  child: LikeAnimation(
+                    child: const Icon(
+                      Icons.favorite,
+                      color: Colors.white,
+                      size: 100,
+                    ),
+                    isAnimating: isLikeAnimating,
+                    duration: const Duration(
+                      milliseconds: 300,
+                    ),
+                    onEnd: () {
+                      setState(() {
+                        isLikeAnimating = false;
+                      });
+                    },
+                  ),
+                )
+              ],
+            ),
+          ),
           //Like Comment Section
           Row(children: [
+            LikeAnimation(
+              isAnimating: widget.snap['likes'].contains(user.uid),
+              // isAnimating: true,
+              smallLike: true,
+
+              child: IconButton(
+                  onPressed: () async {
+                    await FirestoreMethods().likePost(
+                        widget.snap['postId'], user.uid, widget.snap['likes']);
+                    setState(() {
+                      isLikeAnimating = true;
+                    });
+                  },
+                  icon: widget.snap['likes'].contains(user.uid)
+                      ? const Icon(
+                          Icons.favorite,
+                          color: Colors.red,
+                        )
+                      : const Icon(Icons.favorite_outline)),
+            ),
             IconButton(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.favorite,
-                  color: Colors.red,
-                )),
-            IconButton(
-                onPressed: () {},
-                icon: const Icon(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) =>
+                        CommentsScreen(postId: widget.snap['postId']))),
+                icon: Icon(
                   Icons.comment_outlined,
                 )),
             IconButton(
@@ -140,47 +235,55 @@ class _PostCardState extends State<PostCard> {
                         fontWeight: FontWeight.w800,
                       ),
                   child: Text(
-                    '1,202 Likes',
+                    '${widget.snap['likes'].length} likes',
+                    // '1,202 Likes',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
                 Container(
                   width: double.infinity,
-                  padding: EdgeInsets.only(
+                  padding: const EdgeInsets.only(
                     top: 8,
                   ),
                   child: RichText(
-                    text: const TextSpan(
-                        style: TextStyle(color: primaryColor),
+                    text: TextSpan(
+                        style: const TextStyle(color: primaryColor),
                         children: [
                           TextSpan(
-                            text: 'username',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            text: widget.snap['username'],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           TextSpan(
-                            text: '  Hey this is some description ',
+                            text: ' ${widget.snap['description']}',
                             // style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ]),
                   ),
                 ),
                 InkWell(
-                  onTap: (){},
+                  onTap: () {},
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: const Text('View all 203 comments',style: TextStyle(
-                      fontSize: 16,
-                      color: secondaryColor,
-                    ),),
+                    child: Text(
+                      'View all $commentLen comments',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: secondaryColor,
+                      ),
+                    ),
                   ),
-
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: const Text('17/01/2024',style: TextStyle(
-                    fontSize: 12,
-                    color: secondaryColor,
-                  ),),
+                  child: Text(
+                    DateFormat.yMMMd().format(
+                      widget.snap['datePublished'].toDate(),
+                    ),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: secondaryColor,
+                    ),
+                  ),
                 ),
               ],
             ),

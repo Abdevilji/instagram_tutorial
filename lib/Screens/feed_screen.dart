@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:instagram_tutorial/Screens/login_screen.dart';
 import 'package:instagram_tutorial/utils/colors.dart';
 import 'package:instagram_tutorial/utils/global_variable.dart';
 import 'package:instagram_tutorial/widgets/post_card.dart';
@@ -23,7 +24,7 @@ class _FeedScreenState extends State<FeedScreen> {
       appBar: width > webScreenSize
           ? null
           : AppBar(
-        backgroundColor: mobileBackgroundColor,
+        backgroundColor: width > webScreenSize ? webBackgroundColor : mobileBackgroundColor,
         centerTitle: false,
         title: SvgPicture.asset(
           'assets/ic_instagram.svg',
@@ -36,7 +37,7 @@ class _FeedScreenState extends State<FeedScreen> {
               Icons.messenger_outline,
               color: primaryColor,
             ),
-            onPressed: () {},
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context)=> Login_Screen())),//remove it added for login navigation
           ),
         ],
       ),
