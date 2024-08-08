@@ -5,7 +5,7 @@ A new Flutter project.
 I would like to introduce to the new project i am working on to learn the working of flutter Hope to see you soon.
 ## Getting Started
 
-This project is a starting point for a Flutter application.(Facing some firebaase issue)
+This project is a starting point for a Flutter application.
 
 [Host Link](https://abdevilji.github.io/)
 
